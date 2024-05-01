@@ -42,6 +42,10 @@ export struct SettingPage {
       this.ports = this.webViewController.createWebMessagePorts();
       // 2、在应用侧的消息端口(如端口1)上注册回调事件。
       this.ports[1].onMessageEvent((result: web_webview.WebMessage) => {
+        if (result == 'end') {
+          this.isTesting = false
+          this.isTesting = false
+        }
         ToastHelper.getInstance().toast(`识别结果：${result}`, ToastHelper.SHORT_DUR) //将预测结果打印
       })
       // 3、将另一个消息端口(如端口0)发送到HTML侧，由HTML侧保存并使用。
