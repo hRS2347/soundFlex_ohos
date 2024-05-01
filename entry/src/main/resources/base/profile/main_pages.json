@@ -1,0 +1,8 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/main_page",
+    "pages/hall_page",
+    "pages/setting_page"
+  ]
+}

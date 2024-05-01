@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--    <title>Simple Recorder</title>-->
+</head>
+<body>
+<button id="recordBtn">Start Recording</button>
+
+<script>
+
+ class SimpleRecorder {
+    constructor() {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.processor = null;
+        this.input = null;
+        this.audioData = [];
+        this.isRecording = false;
+    }
+
+    init() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                this.stream = stream;
+                this.input = this.audioContext.createMediaStreamSource(stream);
+                this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+
+                this.processor.onaudioprocess = (e) => {
+                    if (!this.isRecording) return;
+                    const data = e.inputBuffer.getChannelData(0);
+                    this.audioData.push(new Float32Array(data));
+                };
+
+                this.input.connect(this.processor);
+                this.processor.connect(this.audioContext.destination);
+            })
+            .catch(error => console.error(error));
+    }
+
+    startRecording(duration = 2000) {
+        if (this.isRecording) return;
+        this.audioData = [];
+        this.isRecording = true;
+        this.init();
+        setTimeout(() => {
+            this.stopRecording();
+        }, duration);
+    }
+
+    stopRecording() {
+        if (!this.isRecording) return;
+        this.isRecording = false;
+        this.processor.disconnect();
+        this.input.disconnect();
+        this.stream.getTracks().forEach(track => track.stop());
+        this.downloadPCM();
+    }
+
+    downloadPCM() {
+        const sampleRate = this.audioContext.sampleRate;
+        const outputSampleRate = 44100;  // Desired sample rate
+        const sampleBits = 16;
+        const audioData = this.audioData.reduce((acc, val) => {
+            acc = new Float32Array(acc.length + val.length);
+            acc.set(val, acc.length - val.length);
+            return acc;
+        }, new Float32Array());
+
+        let data = SimpleRecorder.compress(audioData, sampleRate, outputSampleRate);
+        let dataview = SimpleRecorder.encodePCM(data, sampleBits);
+        let audioBlob = new Blob([dataview], { type: 'audio/pcm' });
+
+        let downloadLink = document.createElement('a');
+        downloadLink.href = window.URL.createObjectURL(audioBlob);
+        downloadLink.download = 'recording.pcm';
+        downloadLink.click();
+    }
+
+    static compress(data, inputSampleRate, outputSampleRate) {
+        let compression = Math.max(Math.floor(inputSampleRate / outputSampleRate), 1);
+        let compressedData = new Float32Array(Math.floor(data.length / compression));
+        for (let i = 0, j = 0; i < data.length; i += compression, j++) {
+            compressedData[j] = data[i];
+        }
+        return compressedData;
+    }
+
+    static encodePCM(bytes, sampleBits) {
+        let buffer = new ArrayBuffer(bytes.length * 2);
+        let view = new DataView(buffer);
+        for (let i = 0; i < bytes.length; i++) {
+            const s = Math.max(-1, Math.min(1, bytes[i]));
+            view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+        return view;
+    }
+
+    // Encapsulated method for Android WebView
+    recordForTwoSeconds() {
+        this.startRecording(2000); // Record for exactly two seconds
+    }
+}
+
+
+  function record(mode) {
+  //录制按钮
+  //todo 录音并发给后台，同时，通过消息管道回传信息，告诉移动端录制完成
+  }
+  function predict() {
+  //测试按钮
+  //todo 录音并发给后台，得到结果后，通过消息管道回传
+  }
+
+
+</script>
+
+<script type="module">
+    const recorder = new SimpleRecorder();
+    document.getElementById('recordBtn').addEventListener('click', () => {
+        recorder.startRecording();  // Record for 2 seconds
+    });
+
+</script>
+
+</body>
+</html>

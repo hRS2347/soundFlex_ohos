@@ -1,0 +1,17 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "light_gery",
+      "value": "#FF8F8F8F"
+    },
+    {
+      "name": "light_light_gery",
+      "value": "#FFF3F3F3"
+    }
+
+  ]
+}
