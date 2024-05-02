@@ -7,6 +7,5 @@
   "license": "",
   "dependencies": {},
   "devDependencies": {
-    "@types/libentry.so": "file:./src/main/cpp/types/libentry"
   }
 }

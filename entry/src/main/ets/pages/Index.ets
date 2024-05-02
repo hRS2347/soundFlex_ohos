@@ -3,7 +3,6 @@ import { AppEvent, ToastHelper } from '../utils/event_util'
 import { ControlPage } from './control_page'
 import { MainPage } from './main_page'
 import { MorePage } from './more_page'
-import entry from 'libentry.so'
 
 @Entry
 @Component
