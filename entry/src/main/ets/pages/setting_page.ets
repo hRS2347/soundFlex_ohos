@@ -45,6 +45,7 @@ export struct SettingPage {
         if (result == 'end') {
           this.isTesting = false
           this.isTesting = false
+          return
         }
         ToastHelper.getInstance().toast(`识别结果：${result}`, ToastHelper.SHORT_DUR) //将预测结果打印
       })
