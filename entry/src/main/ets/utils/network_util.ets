@@ -1,5 +1,6 @@
 import hilog from '@ohos.hilog'
 import http from '@ohos.net.http';
+import request from '@ohos.request';
 
 export default class NetworkHelper {
   private static instance: NetworkHelper
@@ -18,7 +19,7 @@ export default class NetworkHelper {
   private ip: string = "192.168.3.90"
   private port: string = "8886"
 
-  delete(mode: string) {
+  async delete(mode: string) {
     //直接发出请求
     let httpRequest = http.createHttp();
     httpRequest.request(
@@ -32,7 +33,7 @@ export default class NetworkHelper {
         },
         // 当使用POST请求时此字段用于传递内容
         extraData: {
-          "mode": "data to send",
+          "mode": "dev",
         },
       }, (err, data) => {
       if (!err) {
@@ -48,6 +49,67 @@ export default class NetworkHelper {
         httpRequest.destroy();
       }
     });
+  }
+
+  async predict(path) {
+    let uploadConfig = {
+      url: `http://${this.ip}:${this.port}/predict`,
+      header: {
+        'Content-Type': 'multipart/form-data'
+      },
+      method: 'POST',
+      files: [
+        {
+          filename: path, name: 'test', uri: path, type: 'm4a'
+        }
+      ],
+      data: [
+        {
+          name: 'mode', value: 'dev'
+        }
+      ]
+    }
+    let uploadTask
+    try {
+      request.uploadFile(globalThis.context, uploadConfig).then((data) => {
+        uploadTask = data;
+      }).catch((err) => {
+        console.error('Failed to request the upload. Cause: ' + JSON.stringify(err));
+      });
+    } catch (err) {
+      console.error('err.code : ' + err.code + ', err.message : ' + err.message);
+    }
+
+
+  }
+
+  async save(path, label) {
+    let uploadConfig = {
+      url: `http://${this.ip}:${this.port}/save`,
+      header: {
+        'Content-Type': 'multipart/form-data'
+      },
+      method: 'POST',
+      files: [
+        {
+          filename: path, name: 'test', uri: path, type: 'm4a'
+        }
+      ],
+      data: [
+        {name: 'mode', value: 'dev'},
+        {name: 'label', value: label}
+      ]
+    }
+    let uploadTask;
+    try {
+      request.uploadFile(globalThis.context, uploadConfig).then((data) => {
+        uploadTask = data;
+      }).catch((err) => {
+        console.error('Failed to request the upload. Cause: ' + JSON.stringify(err));
+      });
+    } catch (err) {
+      console.error('err.code : ' + err.code + ', err.message : ' + err.message);
+    }
   }
 }
 

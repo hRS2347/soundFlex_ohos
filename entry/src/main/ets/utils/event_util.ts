@@ -4,7 +4,8 @@ import promptAction from '@ohos.promptAction';
 
 export enum AppEvent {
   EVENT_CHANGE_PAGE = '1',
-  CHANGE_ORIENTATION = '2'
+  CHANGE_ORIENTATION = '2',
+  RERUN_ROUTINE = '3',
 }
 
 export enum Direction {

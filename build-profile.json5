@@ -5,13 +5,26 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_MyFirstApplication_com.example.myfirstapplication_30086000729451825.cer",
-          "storePassword": "0000001BC58E3BCA9178C0512AB52A8AB87D95DAFDC2ABB77F5A7116EFA00704963BD7E9920AF163139DA7",
+          "certpath": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_SoundFlex_com.example.myfirstapplication_80086000142916710.cer",
+          "storePassword": "0000001B8908EE4006361A6070A42DF7019D7A64A23F508FCB951E4C7A3D57B5D9441BDBFE0D3D2B6E5E99",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BFE44BB1167E727065A4FF91273448997898ED74FF3D9C2C8AF541D415CF4C414C3FF0F881603F2",
-          "profile": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_MyFirstApplication_com.example.myfirstapplication_30086000729451825.p7b",
+          "keyPassword": "0000001B46A3DE3D0EE23B96ECA0218ADEDA9331A7529292543F7ACB36D3ED917FBD8C5E0564E4BA15AEB7",
+          "profile": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_SoundFlex_com.example.myfirstapplication_80086000142916710.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_MyFirstApplication_com.example.myfirstapplication_30086000729451825.p12"
+          "storeFile": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_SoundFlex_com.example.myfirstapplication_80086000142916710.p12"
+        }
+      },
+      {
+        "name": "sound",
+        "type": "HarmonyOS",
+        "material": {
+          "storePassword": "0000001BA86FC46DE6315ABC4975782EF3D27D367C1EBC482705DCE23015805D09A82888B41A92E3E5A521",
+          "certpath": "D:/harmonyOS/key/SoundFlex.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BEAE55CE7A428D19680866D4970AB95A38049220A412E9DC194ADFC89000E6F244BEC2A62A50DB8",
+          "profile": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_SoundFlex_com.example.myfirstapplication_80086000142916710.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\郑榆达\\.ohos\\config\\auto_debug_SoundFlex_com.example.myfirstapplication_80086000142916710.p12"
         }
       }
     ],

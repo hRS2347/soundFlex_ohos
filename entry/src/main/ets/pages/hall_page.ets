@@ -1,12 +1,29 @@
-import image from '@ohos.multimedia.image';
 import web_webview from '@ohos.web.webview';
 import window from '@ohos.window';
 import emitter from '@ohos.events.emitter';
-import { AppEvent } from '../utils/event_util';
+import { AppEvent, ToastHelper } from '../utils/event_util';
 import router from '@ohos.router';
 import { CircleButton } from '../components/card';
-import { KeyCode } from '@ohos.multimodalInput.keyCode';
-import inputMethod from '@ohos.inputMethod';
+import common from '@ohos.app.ability.common';
+import AudioRecorder from '../utils/normal_record_util';
+import fs from '@ohos.file.fs';
+import media from '@ohos.multimedia.media';
+import NetworkHelper from '../utils/network_util';
+
+// 获取程序的上下文
+const context = getContext(this) as common.UIAbilityContext;
+// 获取项目的files目录
+const filesDir = context.filesDir;
+// 如果文件夹不存在就创建
+fs.access(filesDir, (err, res: boolean) => {
+  if (!res) {
+    // @ts-ignore
+    fs.mkdirSync(filesDir)
+  }
+});
+
+// 录音文件路径
+let audioPath = filesDir + "/audio.m4a";
 
 @Entry
 @Component
@@ -14,8 +31,11 @@ struct Hall_page {
   hallController: web_webview.WebviewController = new web_webview.WebviewController();
   bgController: web_webview.WebviewController = new web_webview.WebviewController();
   @State isOn: boolean = false
+  recorder = new AudioRecorder()
+  private avPlayer
+  private playIng: boolean = false
 
-  onPageShow() {
+  async onPageShow() {
     // 获取旋转的方向，具体可以查看对应文档
     let orientation = window.Orientation.LANDSCAPE;
     try {
@@ -25,6 +45,18 @@ struct Hall_page {
     } catch (exception) {
       console.error('设置失败: ' + JSON.stringify(exception));
     }
+    // 创建avPlayer实例对象
+    this.avPlayer = await media.createAVPlayer();
+    // 创建状态机变化回调函数
+    this.setAVPlayerCallback();
+
+    globalThis.context.eventHub.on(AppEvent.RERUN_ROUTINE, () => {
+      this.runRoutine().then(()=>{
+        if (this.isOn) {
+          globalThis.eventHub.emit(AppEvent.RERUN_ROUTINE)
+        }
+      })
+    })
   }
 
   onPageHide() {
@@ -39,19 +71,62 @@ struct Hall_page {
     }
   }
 
+  // 播放音频
+  async playAudio(path: string) {
+    this.playIng = true
+    let fdPath = 'fd://';
+    let res = fs.accessSync(path);
+    if (!res) {
+      console.error(`音频文件不存在：${path}`);
+      this.playIng = false
+      return
+    }
+    console.info(`播放音频文件：${path}`)
+    // 打开相应的资源文件地址获取fd
+    let file = await fs.open(path);
+    fdPath = fdPath + '' + file.fd;
+    // url赋值触发initialized状态机上报
+    this.avPlayer.url = fdPath;
+  }
+
+  // 停止播放
+  stopPlay() {
+    this.avPlayer.reset();
+  }
+
+  // 注册avplayer回调函数
+  setAVPlayerCallback() {
+    this.avPlayer.on('error', (err) => {
+      this.playIng = false
+      console.error(`播放器发生错误，错误码：${err.code}, 错误信息：${err.message}`);
+      // 调用reset重置资源，触发idle状态
+      this.avPlayer.reset();
+    })
+    // 状态机变化回调函数
+    this.avPlayer.on('stateChange', async (state) => {
+      switch (state) {
+        case 'initialized':
+        // 资源初始化完成，开始准备文件
+          this.avPlayer.prepare();
+          break;
+        case 'prepared':
+        // 资源准备完成，开始准备文件
+          this.avPlayer.play();
+          break;
+        case 'completed':
+        // 调用reset()重置资源，AVPlayer重新进入idle状态，允许更换资源url
+          this.avPlayer.reset();
+          break;
+        case 'idle':
+          this.playIng = false
+          break;
+      }
+    })
+  }
+
   build() {
     RelativeContainer() {
-      Web({ src: $rawfile('Test.html'), controller: this.bgController })
-        .height('1%')
-        .width('1%')
-        .alignRules({
-          top: { anchor: '__container__', align: VerticalAlign.Top },
-          left: { anchor: '__container__', align: HorizontalAlign.Start }
-        })
-        .focusable(false)
-        .id('bg')
-
-      Web({ src: '192.168.3.90:5173/index.html', controller: this.hallController })
+      Web({ src: '192.168.48.147:5173/index.html', controller: this.hallController })
         .height('100%')
         .width('100%')
         .alignRules({
@@ -252,28 +327,6 @@ struct Hall_page {
         router.back()
       })
 
-      // CircleButton({ pic: $r('app.media.keyboard') })
-      //   .margin({ right: 20, bottom: 20 })
-      //   .alignRules({
-      //     bottom: { anchor: '__container__', align: VerticalAlign.Bottom },
-      //     right: { anchor: '__container__', align: HorizontalAlign.End }
-      //   }).id('keyboard').onClick((event: ClickEvent) => {
-      //   // inputMethod.getController().showSoftKeyboard((err) => {
-      //   //   if (err === undefined) {
-      //   //     console.info("hall",'Succeeded in showing softKeyboard.');
-      //   //   } else {
-      //   //     console.error("hall",'Failed to showSoftKeyboard: ' + JSON.stringify(err));
-      //   //   }
-      //   // })
-      //
-      // })
-      // CircleButton({ pic: $r('app.media.interactive') })
-      //   .margin({ right: 10, bottom: 20 })
-      //   .alignRules({
-      //     bottom: { anchor: '__container__', align: VerticalAlign.Bottom },
-      //     right: { anchor: 'keyboard', align: HorizontalAlign.Start }
-      //   }).id('interactive')
-
       Button("设置")
         .width(100)
         .margin({ top: 20, right: 20 })
@@ -294,23 +347,45 @@ struct Hall_page {
           })
         })
 
-      // Toggle({ type: ToggleType.Button, isOn: this.isOn }) {
-      //   Text(this.isOn === false ? "识别：停用" : "识别：停用")
-      //     .fontSize(12)
-      // }
-      // .width(100)
-      // .margin({ top: 10, right: 20 })
-      // .alignRules({
-      //   top: { anchor: 'setting', align: VerticalAlign.Bottom },
-      //   right: { anchor: '__container__', align: HorizontalAlign.End }
-      // })
-      // .id('switch')
-      // .onClick(() => {
-      //   this.isOn = !this.isOn
-      // })
+      Toggle({ type: ToggleType.Button, isOn: this.isOn }) {
+        Text(this.isOn === false ? "识别：停用" : "识别：停用")
+          .fontSize(12)
+      }
+      .width(100)
+      .margin({ top: 10, right: 20 })
+      .alignRules({
+        top: { anchor: 'setting', align: VerticalAlign.Bottom },
+        right: { anchor: '__container__', align: HorizontalAlign.End }
+      })
+      .id('switch')
+      .onClick(() => {
+        this.isOn = !this.isOn
+        globalThis.eventHub.emit(AppEvent.RERUN_ROUTINE)
+      })
     }
     .height('100%')
     .width('100%')
     .backgroundColor($r('app.color.light_light_gery'))
+  }
+
+  async runRoutine(){
+    if (this.isOn) {
+      // 执行routine
+      try {
+        this.playAudio(audioPath) // 播放超声波
+        await this.recorder.run(audioPath) // 等待录音结束
+        this.stopPlay() // 播放超声波
+        //发送获取结果
+        NetworkHelper.getInstance().predict(audioPath).then(()=>{
+
+        })
+
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+  }
+  sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 }

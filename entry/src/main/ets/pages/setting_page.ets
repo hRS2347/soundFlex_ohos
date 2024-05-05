@@ -49,9 +49,6 @@ export struct SettingPage {
         }
         ToastHelper.getInstance().toast(`识别结果：${result}`, ToastHelper.SHORT_DUR) //将预测结果打印
       })
-      // 3、将另一个消息端口(如端口0)发送到HTML侧，由HTML侧保存并使用。
-      // 这个口是 应用侧=>HTML侧使用的，这里用不到
-      // this.webViewController.postMessage('__init_port__', [this.ports[0]], '*');
     } catch (error) {
       console.error(`ErrorCode: ${error.code},  Message: ${error.message}`);
     }
