@@ -3,6 +3,7 @@ import hilog from '@ohos.hilog';
 import window from '@ohos.window';
 import abilityAccessCtrl, { Permissions } from '@ohos.abilityAccessCtrl';
 import bundleManager from '@ohos.bundle.bundleManager';
+import resourceManager from '@ohos.resourceManager';
 
 const permissions: Array<Permissions> = ['ohos.permission.MICROPHONE'];
 
@@ -45,6 +46,7 @@ export default class EntryAbility extends UIAbility {
     });
     globalThis.context = this.context // 赋值给全局变量context
     globalThis.eventHub = this.context.eventHub // 赋值给全局变量context
+    globalThis.resourceManager = this.context.resourceManager
 
     for (let i = 0; i < permissions.length; i++) {
       checkAccessToken(permissions[i]).then(status => {

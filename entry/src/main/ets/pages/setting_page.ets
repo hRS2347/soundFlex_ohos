@@ -3,17 +3,35 @@ import web_webview from '@ohos.web.webview';
 import { AppEvent, Direction, ToastHelper } from '../utils/event_util';
 import http from '@ohos.net.http';
 import NetworkHelper from '../utils/network_util';
+import PlayHelper from '../utils/play_util';
+import AudioRecorder from '../utils/normal_record_util'
+import common from '@ohos.app.ability.common';
+import fs from '@ohos.file.fs';
+// 获取程序的上下文
+const context = getContext(this) as common.UIAbilityContext;
+// 获取项目的files目录
+const filesDir = context.filesDir;
+// 如果文件夹不存在就创建
+fs.access(filesDir, (err, res: boolean) => {
+  if (!res) {
+    // @ts-ignore
+    fs.mkdirSync(filesDir)
+  }
+});
+let audioPath = filesDir + "/audio.m4a";
 
 @Entry
 @Component
 export struct SettingPage {
-  webViewController: web_webview.WebviewController = new web_webview.WebviewController();
   btnGap = 24
   @State isRecording: boolean = false
   @State isTesting: boolean = false
   @State isSelect: string = '空'
+  recorder = new AudioRecorder()
+  label = '0'
 
   translateIndexToDir(index: Direction) {
+    this.label = index
     if (index == Direction.TURN_LEFT) {
       this.isSelect = '左转'
     } else if (index == Direction.UP) {
@@ -37,34 +55,34 @@ export struct SettingPage {
   ports: web_webview.WebMessagePort[];
   //订阅管道
   aboutToAppear() {
-    try {
-      // 1、创建两个消息端口。
-      this.ports = this.webViewController.createWebMessagePorts();
-      // 2、在应用侧的消息端口(如端口1)上注册回调事件。
-      this.ports[1].onMessageEvent((result: web_webview.WebMessage) => {
-        if (result == 'end') {
-          this.isTesting = false
-          this.isTesting = false
-          return
-        }
-        ToastHelper.getInstance().toast(`识别结果：${result}`, ToastHelper.SHORT_DUR) //将预测结果打印
-      })
-    } catch (error) {
-      console.error(`ErrorCode: ${error.code},  Message: ${error.message}`);
-    }
+    // try {
+    //   // 1、创建两个消息端口。
+    //   this.ports = this.webViewController.createWebMessagePorts();
+    //   // 2、在应用侧的消息端口(如端口1)上注册回调事件。
+    //   this.ports[1].onMessageEvent((result: web_webview.WebMessage) => {
+    //     if (result == 'end') {
+    //       this.isTesting = false
+    //       this.isTesting = false
+    //       return
+    //     }
+    //     ToastHelper.getInstance().toast(`识别结果：${result}`, ToastHelper.SHORT_DUR) //将预测结果打印
+    //   })
+    // } catch (error) {
+    //   console.error(`ErrorCode: ${error.code},  Message: ${error.message}`);
+    // }
   }
 
   build() {
     RelativeContainer() {
-      Web({ src: $rawfile('Test.html'), controller: this.webViewController })
-        .javaScriptAccess(true)
-        .height('1%')
-        .width('1%')
-        .alignRules({
-          top: { anchor: '__container__', align: VerticalAlign.Top },
-          left: { anchor: '__container__', align: HorizontalAlign.Start }
-        })
-        .id('web')
+      // Web({ src: $rawfile('Test.html'), controller: this.webViewController })
+      //   .javaScriptAccess(true)
+      //   .height('1%')
+      //   .width('1%')
+      //   .alignRules({
+      //     top: { anchor: '__container__', align: VerticalAlign.Top },
+      //     left: { anchor: '__container__', align: HorizontalAlign.Start }
+      //   })
+      //   .id('web')
 
       Text('设置')
         .margin({ left: 30, top: 30 })
@@ -180,13 +198,13 @@ export struct SettingPage {
             return
           }
           this.isRecording = true
-          this.webViewController.runJavaScript(`record(${this.isSelect}})`)
+          this.runSave()
         })
 
 
-      Button(this.isTesting ? "测试中":'测试')
+      Button(this.isTesting ? "测试中" : '测试')
         .width('40%')
-        .backgroundColor(this.isRecording || this.isTesting? '#ff7c7c7c' : '#ff0d46ff')
+        .backgroundColor(this.isRecording || this.isTesting ? '#ff7c7c7c' : '#ff0d46ff')
         .margin({ top: 40, right: 24 })
         .alignRules({
           top: { anchor: 'null', align: VerticalAlign.Bottom },
@@ -203,7 +221,7 @@ export struct SettingPage {
             return
           }
           this.isTesting = true
-          this.webViewController.runJavaScript(`predict()`)
+          this.runPredict()
         })
 
       Button("清空")
@@ -220,12 +238,43 @@ export struct SettingPage {
             ToastHelper.getInstance().toast('请先选择一个按钮', ToastHelper.SHORT_DUR)
             return
           }
-          NetworkHelper.getInstance().delete('input')
+          NetworkHelper.getInstance().delete().then(response => {
+            console.log('axios', 'Request successful:', response.data);
+          })
+            .catch(error => {
+              console.error('axios', 'Error sending request:', error);
+            })
         })
 
     }
     .height('100%')
     .width('100%')
     .backgroundColor($r('app.color.light_light_gery'))
+  }
+
+  async runSave() {
+    PlayHelper.getInstance().playAudio() // 播放超声波
+    await this.recorder.run(audioPath) // 等待录音结束
+    PlayHelper.getInstance().stopPlay() // 播放超声波
+    //发送获取结果
+    NetworkHelper.getInstance().save(audioPath, this.label).then(response => {
+      console.log('Request successful:', response.data);
+      ToastHelper.getInstance().toast(`序号${response.data}保存成功`, ToastHelper.SHORT_DUR)
+    }).catch(error => {
+      console.error('Error sending request:', error);
+    })
+  }
+
+  async runPredict() {
+    PlayHelper.getInstance().playAudio() // 播放超声波
+    await this.recorder.run(audioPath) // 等待录音结束
+    PlayHelper.getInstance().stopPlay() // 播放超声波
+    //发送获取结果
+    NetworkHelper.getInstance().predict(audioPath).then(response => {
+      console.log('Request successful:', response.data);
+      ToastHelper.getInstance().toast(`测试结果为序号${response.data}`, ToastHelper.SHORT_DUR)
+    }).catch(error => {
+      console.error('Error sending request:', error);
+    })
   }
 }
