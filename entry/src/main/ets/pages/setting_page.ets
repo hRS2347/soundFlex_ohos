@@ -212,10 +212,6 @@ export struct SettingPage {
         })
         .id('test')
         .onClick(() => {
-          if (this.isSelect == '空') {
-            ToastHelper.getInstance().toast('请先选择一个按钮', ToastHelper.SHORT_DUR)
-            return
-          }
           if (this.isRecording || this.isTesting) {
             ToastHelper.getInstance().toast("正在录制中", ToastHelper.SHORT_DUR)
             return
@@ -234,14 +230,12 @@ export struct SettingPage {
         })
         .id('clear')
         .onClick(() => {
-          if (this.isSelect == '空') {
-            ToastHelper.getInstance().toast('请先选择一个按钮', ToastHelper.SHORT_DUR)
-            return
-          }
           NetworkHelper.getInstance().delete().then(response => {
+            ToastHelper.getInstance().toast(`清空成功`, ToastHelper.SHORT_DUR)
             console.log('axios', 'Request successful:', response.data);
           })
             .catch(error => {
+              ToastHelper.getInstance().toast(`内部错误：${error}`, ToastHelper.SHORT_DUR)
               console.error('axios', 'Error sending request:', error);
             })
         })
@@ -257,12 +251,19 @@ export struct SettingPage {
     await this.recorder.run(audioPath) // 等待录音结束
     PlayHelper.getInstance().stopPlay() // 播放超声波
     //发送获取结果
-    NetworkHelper.getInstance().save(audioPath, this.label).then(response => {
-      console.log('Request successful:', response.data);
-      ToastHelper.getInstance().toast(`序号${response.data}保存成功`, ToastHelper.SHORT_DUR)
-    }).catch(error => {
-      console.error('Error sending request:', error);
-    })
+    NetworkHelper.getInstance()
+      .save(audioPath, this.label)
+      .then(response => {
+        console.log('Request successful:', response.data);
+        ToastHelper.getInstance().toast(`序号${response.data}保存成功`, ToastHelper.SHORT_DUR)
+      })
+      .catch(error => {
+        ToastHelper.getInstance().toast(`内部错误：${error}`, ToastHelper.SHORT_DUR)
+        console.error('axios', 'Error sending request:' + error);
+      })
+      .finally(() => {
+        this.isRecording = false
+      })
   }
 
   async runPredict() {
@@ -270,11 +271,18 @@ export struct SettingPage {
     await this.recorder.run(audioPath) // 等待录音结束
     PlayHelper.getInstance().stopPlay() // 播放超声波
     //发送获取结果
-    NetworkHelper.getInstance().predict(audioPath).then(response => {
-      console.log('Request successful:', response.data);
-      ToastHelper.getInstance().toast(`测试结果为序号${response.data}`, ToastHelper.SHORT_DUR)
-    }).catch(error => {
-      console.error('Error sending request:', error);
-    })
+    NetworkHelper.getInstance()
+      .predict(audioPath)
+      .then(response => {
+        console.log('Request successful:', response.data);
+        ToastHelper.getInstance().toast(`测试结果为序号${response.data}`, ToastHelper.SHORT_DUR)
+      })
+      .catch(error => {
+        ToastHelper.getInstance().toast(`内部错误：${error}`, ToastHelper.SHORT_DUR)
+        console.error('axios', 'Error sending request:' + error);
+      })
+      .finally(() => {
+        this.isTesting = false
+      })
   }
 }

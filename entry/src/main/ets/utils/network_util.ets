@@ -2,7 +2,26 @@ import hilog from '@ohos.hilog'
 import http from '@ohos.net.http';
 import request from '@ohos.request';
 import axios, { AxiosError, AxiosResponse, FormData, InternalAxiosRequestConfig } from '@ohos/axios'
+// 添加请求拦截器
+axios.interceptors.request.use((config:InternalAxiosRequestConfig) => {
+  // 对请求数据做点什么
+  console.log('axios','request:' +JSON.stringify(config))
+  return config;
+}, (error:AxiosError) => {
+  // 对请求错误做些什么
+  return Promise.reject(error);
+});
 
+
+// 添加响应拦截器
+axios.interceptors.response.use((response:AxiosResponse)=> {
+  // 对响应数据做点什么
+  console.log('axios','response:' +JSON.stringify(response))
+  return response;
+}, (error:AxiosError)=> {
+  // 对响应错误做点什么
+  return Promise.reject(error);
+});
 
 export default class NetworkHelper {
   private static instance: NetworkHelper
@@ -18,7 +37,7 @@ export default class NetworkHelper {
     return NetworkHelper.instance
   }
   // 服务端 IP 和端口，在进入 app 时就会输入的
-  private ip: string = "192.168.3.143"
+  private ip: string = "192.168.3.10"
   private port: string = "8886"
 
   delete() {
@@ -38,19 +57,19 @@ export default class NetworkHelper {
     //       "mode": "dev",
     //     },
     //   });
-    let data = {
-      'mode': 'dev'
-    }
-
-    console.log('axios', JSON.stringify(data))
     const requestData = {
+      url:`http://${this.ip}:${this.port}/delete`,
       method: 'post',
+      timeout: 1000,
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'application/json',
+        'CharSet':'UTF-8'
       },
-      data:JSON.stringify(data)
-    };
-    return axios(`http://${this.ip}:${this.port}/delete`, requestData);
+      data:{
+        mode:"dev"
+      }
+    }
+    return axios(requestData)
     // const url = `http://${this.ip}:${this.port}/delete`;
     // const headers = {
     //   'Content-Type': 'multipart/form-data'
@@ -68,7 +87,7 @@ export default class NetworkHelper {
   }
 
   async predict(path) {
-    let uploadConfig = {
+    const uploadConfig = {
       url: `http://${this.ip}:${this.port}/predict`,
       header: {
         'Content-Type': 'multipart/form-data'

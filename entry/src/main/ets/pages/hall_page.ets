@@ -134,25 +134,40 @@ struct Hall_page {
         await PlayHelper.getInstance().playAudio() // 播放超声波
         await this.recorder.run(audioPath) // 等待录音结束
         PlayHelper.getInstance().stopPlay() // 播放超声波
-        //发送获取结果
-        // await NetworkHelper.getInstance().predict(audioPath).then(response => {
-        //   console.log('Request successful:', response.data);
-        //   ToastHelper.getInstance().toast(response.data, ToastHelper.SHORT_DUR)
-        //   //根据结果，调用webview函数
-        //   this.hallController.runJavaScript(`restest('${this.transToKey(response.data)}')`);
-        // }).catch(error => {
-        //   console.error('Error sending request:', error);
-        // })
+        // 发送获取结果
+        await NetworkHelper.getInstance().predict(audioPath).then(response => {
+          console.log('Request successful:', response.data);
+          ToastHelper.getInstance().toast(response.data, ToastHelper.SHORT_DUR)
+          //根据结果，调用webview函数
+          this.hallController.runJavaScript(`restest('${this.transToKey(response.data)}')`);
+        }).catch(error => {
+          console.error('Error sending request:', error);
+          console.error('axios', 'Error sending request:' + error);
+        })
       } catch (error) {
         console.error('Error:', error);
       }
     }
   }
 
-  transToKey(index:Direction){
-    return 'w'
+  transToKey(index: Direction) {
+    switch (index) {
+      case Direction.TURN_LEFT:
+        return 'a'
+      case Direction.UP:
+        return 'w'
+      case Direction.TURN_RIGHT:
+        return 'd'
+      case Direction.DOWN:
+        return 's'
+      case Direction.TURN_RIGHT:
+        return 'e'
+      case Direction.TURN_LEFT:
+        return 'q'
+      default:
+        return 'w'
+    }
   }
-
 
   sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))
